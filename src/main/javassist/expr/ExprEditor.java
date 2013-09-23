@@ -182,8 +182,13 @@ public class ExprEditor {
             int pos = iterator.next();
             int c = iterator.byteAt(pos);
 
-            if (c < Opcode.GETSTATIC)   // c < 178
+            if (c < Opcode.GETSTATIC) {  // c < 178
+            	if(c == Opcode.LDC || c == Opcode.LDC_W) {
+            		expr = new LoadConstant(pos, iterator, clazz, minfo, c);
+            		edit((LoadConstant)expr);
+            	}
                 /* skip */;
+            }
             else if (c < Opcode.NEWARRAY) { // c < 188
                 if (c == Opcode.INVOKESTATIC
                     || c == Opcode.INVOKEINTERFACE
@@ -253,6 +258,10 @@ public class ExprEditor {
             throw new CannotCompileException(e);
         }
     }
+    
+    
+    public void edit(LoadConstant e) throws CannotCompileException {}
+    
 
     /**
      * Edits a <tt>new</tt> expression (overridable).
