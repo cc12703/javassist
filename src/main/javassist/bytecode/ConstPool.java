@@ -1812,6 +1812,10 @@ class Utf8Info extends ConstInfo {
     public int copy(ConstPool src, ConstPool dest, Map map) {
         return dest.addUtf8Info(string);
     }
+    
+    public void set(String str) {
+    	string = str;
+    }
 
     public void write(DataOutputStream out) throws IOException {
         out.writeByte(tag);
