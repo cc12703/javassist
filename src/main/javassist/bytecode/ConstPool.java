@@ -637,6 +637,20 @@ public final class ConstPool {
         Utf8Info utf = (Utf8Info)getItem(index);
         return utf.string;
     }
+    
+    
+    /**
+     * Writes <code>CONSTANT_utf8_info</code> structure
+     * at the given index.
+     *
+     * @param index   the index of the utf8 string entry. 
+     * @param str     the string value
+     */
+    public void setUtf8Info(int index, String str) {
+    	Utf8Info utf = (Utf8Info)getItem(index);
+    	utf.string = str;
+    }
+    
 
     /**
      * Reads the <code>reference_kind</code> field of the
@@ -1813,9 +1827,6 @@ class Utf8Info extends ConstInfo {
         return dest.addUtf8Info(string);
     }
     
-    public void set(String str) {
-    	string = str;
-    }
 
     public void write(DataOutputStream out) throws IOException {
         out.writeByte(tag);
