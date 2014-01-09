@@ -320,7 +320,11 @@ public class CodeAttribute extends AttributeInfo implements Opcode {
         if (smt != null)
             attributes.add(smt);
     }
-
+    
+    public void removeAttributeStackMapTable() {
+    	AttributeInfo.remove(attributes, StackMapTable.tag);
+    }
+    
     /**
      * Adds a stack map table for J2ME (CLDC).  If another copy of stack map table
      * is already contained, the old one is removed.
@@ -334,6 +338,10 @@ public class CodeAttribute extends AttributeInfo implements Opcode {
         AttributeInfo.remove(attributes, StackMap.tag);
         if (sm != null)
             attributes.add(sm);
+    }
+    
+    public void removeAttributeStackMap() {
+    	AttributeInfo.remove(attributes, StackMap.tag);
     }
 
     /**
