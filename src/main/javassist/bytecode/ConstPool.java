@@ -1827,6 +1827,32 @@ class Utf8Info extends ConstInfo {
         return dest.addUtf8Info(string);
     }
     
+    public void renameClass(ConstPool cp, String oldName, String newName, HashMap cache) {
+        String oldStr = string;
+        String newStr = Descriptor.rename(oldStr, oldName, newName);
+        if (oldStr != newStr)
+            if (cache == null)
+                string = newStr;
+            else {
+                cache.remove(this);
+                string = newStr;
+                cache.put(this, this);
+            }
+    }
+
+    public void renameClass(ConstPool cp, Map map, HashMap cache) {
+        String oldStr = string;
+        String newStr = Descriptor.rename(oldStr, map);
+        if (oldStr != newStr)
+            if (cache == null)
+                string = newStr;
+            else {
+                cache.remove(this);
+                string = newStr;
+                cache.put(this, this);
+            }
+    }
+    
 
     public void write(DataOutputStream out) throws IOException {
         out.writeByte(tag);
