@@ -74,8 +74,8 @@
            destdir="${build.classes.dir}"
            debug="on"
            deprecation="on"
-	       source="1.4"
-	       target="1.4"
+	       source="1.6"
+	       target="1.6"
            optimize="off"
            includes="**">
       <classpath refid="classpath"/>
