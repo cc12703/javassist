@@ -213,9 +213,9 @@ public class ClassPool {
      * <p>When this method is called for the first time, the default
      * class pool is created with the following code snippet:
      *
-     * <ul><code>ClassPool cp = new ClassPool();
+     * <pre>ClassPool cp = new ClassPool();
      * cp.appendSystemPath();
-     * </code></ul>
+     * </pre>
      *
      * <p>If the default class pool cannot find any class files,
      * try <code>ClassClassPath</code> and <code>LoaderClassPath</code>.
@@ -250,7 +250,7 @@ public class ClassPool {
      * caching of classes.
      *
      * @see #getCached(String)
-     * @see #removeCached(String,CtClass)
+     * @see #removeCached(String)
      */
     protected void cacheCtClass(String classname, CtClass c, boolean dynamic) {
         classes.put(classname, c);
@@ -381,9 +381,9 @@ public class ClassPool {
      * This method is useful if you want to generate a new class as a copy
      * of another class (except the class name).  For example,
      *
-     * <ul><pre>
+     * <pre>
      * getAndRename("Point", "Pair")
-     * </pre></ul>
+     * </pre>
      *
      * returns a <code>CtClass</code> object representing <code>Pair</code>
      * class.  The definition of <code>Pair</code> is the same as that of
@@ -517,7 +517,6 @@ public class ClassPool {
 
     /**
      * @param useCache      false if the cached CtClass must be ignored.
-     * @param searchParent  false if the parent class pool is not searched.
      * @return null     if the class could not be found.
      */
     protected synchronized CtClass get0(String classname, boolean useCache)
@@ -815,7 +814,7 @@ public class ClassPool {
 
     /**
      * Creates a new public nested class.
-     * This method is called by CtClassType.makeNestedClass().
+     * This method is called by {@link CtClassType#makeNestedClass()}.
      *
      * @param classname     a fully-qualified class name.
      * @return      the nested class.
@@ -855,6 +854,28 @@ public class ClassPool {
         CtClass clazz = new CtNewClass(name, this, true, superclass);
         cacheCtClass(name, clazz, true);
         return clazz;
+    }
+
+    /**
+     * Creates a new annotation.
+     * If there already exists a class/interface with the same name,
+     * the new interface overwrites that previous one.
+     *
+     * @param name      a fully-qualified interface name.
+     *                  Or null if the annotation has no super interface. 
+     * @throws RuntimeException if the existing interface is frozen.
+     * @since 3.19
+     */
+    public CtClass makeAnnotation(String name) throws RuntimeException {
+        try {
+            CtClass cc = makeInterface(name, get("java.lang.annotation.Annotation"));
+            cc.setModifiers(cc.getModifiers() | Modifier.ANNOTATION);
+            return cc;
+        }
+        catch (NotFoundException e) {
+            // should never happen.
+            throw new RuntimeException(e.getMessage(), e);
+        }
     }
 
     /**

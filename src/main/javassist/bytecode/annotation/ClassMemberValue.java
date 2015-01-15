@@ -101,10 +101,10 @@ public class ClassMemberValue extends MemberValue {
     public String getValue() {
         String v = cp.getUtf8Info(valueIndex);
         try {
-			return SignatureAttribute.toTypeSignature(v).toString();
-		} catch (BadBytecode e) {
-			throw new RuntimeException(e);
-		}
+            return SignatureAttribute.toTypeSignature(v).jvmTypeName();
+        } catch (BadBytecode e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -121,7 +121,7 @@ public class ClassMemberValue extends MemberValue {
      * Obtains the string representation of this object.
      */
     public String toString() {
-    	return getValue() + ".class";
+        return getValue().replace('$', '.') + ".class";
     }
 
     /**

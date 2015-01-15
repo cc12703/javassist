@@ -4,10 +4,10 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.Collection;
 import java.util.HashSet;
+
 import javassist.bytecode.*;
-import javassist.bytecode.annotation.*;
+import javassist.bytecode.annotation.Annotation;
 import javassist.expr.*;
 
 public class JvstTest4 extends JvstTestRoot {
@@ -180,15 +180,19 @@ public class JvstTest4 extends JvstTestRoot {
         ClassFileWriter.MethodWriter mw = cfw.getMethodWriter();
 
         mw.begin(AccessFlag.PUBLIC, MethodInfo.nameInit, "()V", null, null);
+        assertEquals(0, mw.size());
         mw.add(Opcode.ALOAD_0);
+        assertEquals(1, mw.size());
         mw.addInvoke(Opcode.INVOKESPECIAL, "java/lang/Object", MethodInfo.nameInit, "()V");
         mw.add(Opcode.RETURN);
         mw.codeEnd(1, 1);
         mw.end(null, null);
 
         mw.begin(AccessFlag.PUBLIC, "move", "(II)V", null, null);
+        assertEquals(0, mw.size());
         mw.add(Opcode.ALOAD_0);
         mw.addInvoke(Opcode.INVOKEVIRTUAL, "java/lang/Object", "toString", "()Ljava/lang/String;");
+        assertEquals(4, mw.size());
         mw.add(Opcode.POP);
         mw.add(Opcode.RETURN);
         mw.add(Opcode.POP);
@@ -602,10 +606,10 @@ public class JvstTest4 extends JvstTestRoot {
         assertEquals(packageName, obj.getClass().getPackage().getName());
     }
 
-    public static final String BASE_PATH="../";
-    public static final String JAVASSIST_JAR=BASE_PATH+"javassist.jar";
-    public static final String CLASSES_FOLDER=BASE_PATH+"build/classes";
-    public static final String TEST_CLASSES_FOLDER=BASE_PATH+"build/test-classes";
+    public static final String BASE_PATH = "../";
+    public static final String JAVASSIST_JAR = BASE_PATH + "javassist.jar";
+    public static final String CLASSES_FOLDER = BASE_PATH + "build/classes";
+    public static final String TEST_CLASSES_FOLDER = BASE_PATH + "build/test-classes";
 
     public static class Inner1 {
         public static int get() {
@@ -657,8 +661,9 @@ public class JvstTest4 extends JvstTestRoot {
         long t2 = endTime2 - endTime;
         long t3 = endTime3 - endTime2;
         System.out.println("JIRA150: " + t1 + ", " + t2 + ", " + t3);
-        assertTrue(t2 < t1 * 3);
-        assertTrue(t3 < t1 * 2);
+        assertTrue("performance test (the next try may succeed): " + t1 + "/ 6 < " + t2,
+                   t2 < t1 * 6);
+        assertTrue("", t3 < t1 * 3);
     }
 
     public void testJIRA150b() throws Exception {
@@ -686,15 +691,17 @@ public class JvstTest4 extends JvstTestRoot {
         }
 
         // try to run garbage collection.
+        int[][] mem = new int[100][];
         int[] large;
         for (int i = 0; i < 100; i++) {
             large = new int[1000000];
-            large[large.length - 2] = 9;
+            large[large.length - 2] = 9 + i;
+            mem[i] = large;
         }
         System.gc();
         System.gc();
         int size = javassist.compiler.MemberResolver.getInvalidMapSize();
-        System.out.println("JIRA150b " + size);
+        System.out.println("JIRA150b " + size + " " + mem[mem.length - 1][mem[0].length - 2]);
         assertTrue("JIRA150b size: " + origSize + " " + size, size < origSize + N);
     }
 
@@ -918,5 +925,157 @@ public class JvstTest4 extends JvstTestRoot {
             fail("run2");
         }
         catch (Exception e) {}
+    }
+
+    public void testJIRA212() throws Exception {
+        CtClass cc = sloader.get("test4.JIRA212");
+        for (final CtBehavior behavior : cc.getDeclaredBehaviors()) {
+            behavior.instrument(new ExprEditor() {
+                    public void edit(FieldAccess fieldAccess) throws CannotCompileException {
+                        String fieldName = fieldAccess.getFieldName().substring(0,1).toUpperCase() + fieldAccess.getFieldName().substring(1);
+                        if (fieldAccess.isReader()) {
+                            // Rewrite read access
+                            fieldAccess.replace("$_ = $0.get" + fieldName + "();");
+                        } else if (fieldAccess.isWriter()) {
+                            // Rewrite write access
+                            fieldAccess.replace("$0.set" + fieldName + "($1);");
+                        }
+                    }});
+        }
+        cc.writeFile();
+        Object obj = make(cc.getName());
+    }
+
+    public void testWhileTrueKO() throws Exception {
+        final ClassPool pool = ClassPool.getDefault();
+        final CtClass cc = pool.makeClass("test4.TestWhileTrueKO");
+        String source = "public void testWhile() { while(true) { break; } }";
+        cc.addMethod(CtMethod.make(source, cc));
+        cc.writeFile();
+        make(cc.getName());
+    }
+
+    public void testWhileTrueOK() throws Exception {
+        final ClassPool pool = ClassPool.getDefault();
+        final CtClass cc = pool.makeClass("test4.TestWhileTrueOK");
+        String source = "public void testWhile() { while(0==0) { break; }}";
+        cc.addMethod(CtMethod.make(source, cc));
+        cc.writeFile();
+        make(cc.getName());
+    }
+
+    // JIRA JASSIST-224
+    public void testMethodParameters() throws Exception {
+        Class rc = test4.MethodParamTest.class;
+        java.lang.reflect.Method m = rc.getDeclaredMethods()[0];
+        java.lang.reflect.Parameter[] params = m.getParameters();
+        assertEquals("i", params[0].getName());
+        assertEquals("s", params[1].getName());
+
+        CtClass cc = sloader.get("test4.MethodParamTest");
+        ClassFile cf = cc.getClassFile2();
+        ConstPool cp = cf.getConstPool();
+        MethodInfo minfo = cf.getMethod("test");
+        MethodParametersAttribute attr
+            = (MethodParametersAttribute)minfo.getAttribute(MethodParametersAttribute.tag);
+        assertEquals(2, attr.size());
+        assertEquals("i", cp.getUtf8Info(attr.name(0)));
+        assertEquals("s", cp.getUtf8Info(attr.name(1)));
+
+        attr = (MethodParametersAttribute)attr.copy(cp, null);
+        assertEquals(2, attr.size());
+        assertEquals("i", cp.getUtf8Info(attr.name(0)));
+        assertEquals("s", cp.getUtf8Info(attr.name(1)));
+    }
+
+    // JIRA JASSIST-220
+    public void testStaticInterfaceMethods() throws Exception {
+        CtClass cc = sloader.get("test4.JIRA220");
+
+        cc.getMethod("foo", "()V").instrument(new ExprEditor() {
+            @Override
+            public void edit(MethodCall m) throws CannotCompileException {
+                try {
+                    m.getClassName();
+                } catch (Exception e) {
+                    fail(e.getMessage());
+                }
+            }
+        });
+    }
+
+    // JIRA-230
+    public void testDeadcode() throws Exception {
+        CtClass newClass = sloader.makeClass("test4.TestDeadcode");
+        addDeadCode(newClass, "public void evaluate(){if (false) {int i = 0;}}");
+        addDeadCode(newClass, "public void evaluate2(){if (false == true) {int i = 0;}}");
+        addDeadCode(newClass, "public void evaluate3(){if (true) {} else {} int i = 0; if (false) {} else {} i++; }");
+        addDeadCode(newClass, "public void evaluate4(){ for (;false;); int i = false ? 1 : 0; while (true) { return; }}");
+        addDeadCode(newClass, "public void evaluate5(){ boolean b = !false; b = false && b; b = true && true;"
+                            + "  b = true || b; b = b || false; }");
+        addDeadCode(newClass, "public boolean evaluate6(){ return !false; }");
+        addDeadCode(newClass, "public boolean evaluate7(){ return !true; }");
+
+        newClass.debugWriteFile();
+        Class<?> cClass = newClass.toClass();
+        Object o = cClass.newInstance();
+        java.lang.reflect.Method m = cClass.getMethod("evaluate");
+        m.invoke(o);
+        m = cClass.getMethod("evaluate2");
+        m.invoke(o);
+        m = cClass.getMethod("evaluate3");
+        m.invoke(o);
+        m = cClass.getMethod("evaluate4");
+        m.invoke(o);
+        m = cClass.getMethod("evaluate6");
+        assertTrue((boolean)m.invoke(o));
+        m = cClass.getMethod("evaluate7");
+        assertFalse((boolean)m.invoke(o));
+        m = cClass.getMethod("evaluate5");
+        m.invoke(o);
+    }
+
+    private void addDeadCode(CtClass cc, String meth) throws Exception {
+        CtMethod m = CtNewMethod.make(meth, cc);
+        cc.addMethod(m);
+    }
+
+    public void testAnnArg() throws Exception {
+        CtClass cc = sloader.get("test4.AnnoArg");
+        CtMethod m = cc.getDeclaredMethod("foo");
+        test4.AnnoArg.AnnoArgAt a = (test4.AnnoArg.AnnoArgAt)m.getAnnotations()[0];
+        assertEquals("test4.AnnoArg$B", a.value().getName());
+        System.out.println(a.value().getName());
+    }
+
+    public void testDeclaredMethods() throws Exception {
+        CtClass cc = sloader.get("test4.DeclMethodsList");
+        CtMethod[] meth = cc.getDeclaredMethods("foo");
+        assertEquals(2, meth.length);
+        assertEquals("()V", meth[0].getSignature());
+        assertEquals("(I)I", meth[1].getSignature());
+        meth = cc.getDeclaredMethods("bar");
+        assertEquals(1, meth.length);
+        assertEquals("()V", meth[0].getSignature());
+        meth = cc.getDeclaredMethods("baz");
+        assertEquals(0, meth.length);
+    }
+
+    public void testAnnotationLoader() throws Exception {
+        CtClass anno = sloader.makeAnnotation("test4.AnnoLoadAnno");
+        anno.debugWriteFile();
+        CtClass cc = sloader.get("test4.AnnoLoad");
+        CtMethod m = cc.getDeclaredMethod("foo");
+        ClassFile cf = cc.getClassFile();
+        ConstPool cp = cf.getConstPool();
+        AnnotationsAttribute attr
+            = new AnnotationsAttribute(cp, AnnotationsAttribute.visibleTag);
+        Annotation a = new Annotation(anno.getName(), cp);
+        a.addMemberValue("value", new javassist.bytecode.annotation.StringMemberValue("file/path", cp));
+        attr.setAnnotation(a);
+        m.getMethodInfo().addAttribute(attr);
+        cc.writeFile();
+        Class<?> rc = ((java.lang.annotation.Annotation)m.getAnnotations()[0]).annotationType();
+        assertEquals(anno.getName(), rc.getName());
     }
 }

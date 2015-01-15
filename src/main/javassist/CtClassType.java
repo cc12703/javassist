@@ -676,7 +676,20 @@ class CtClassType extends CtClass {
         }
         catch (ClassNotFoundException e) {
             ClassLoader cl2 = cp.getClass().getClassLoader();
-            return anno.toAnnotationType(cl2, cp);
+            try {
+                return anno.toAnnotationType(cl2, cp);
+            }
+            catch (ClassNotFoundException e2){
+                try {
+                    Class<?> clazz = cp.get(anno.getTypeName()).toClass();
+                    return javassist.bytecode.annotation.AnnotationImpl.make(
+                                            clazz.getClassLoader(),
+                                            clazz, cp, anno);
+                }
+                catch (Throwable e3) {
+                    throw new ClassNotFoundException(anno.getTypeName());
+                }
+            }
         }
     }
 
@@ -772,17 +785,23 @@ class CtClassType extends CtClass {
         return null;
     }
 
-    public CtMethod getEnclosingMethod() throws NotFoundException {
+    public CtBehavior getEnclosingBehavior() throws NotFoundException {
         ClassFile cf = getClassFile2();
         EnclosingMethodAttribute ema
                 = (EnclosingMethodAttribute)cf.getAttribute(
                                                 EnclosingMethodAttribute.tag);
-        if (ema != null) {
+        if (ema == null)
+            return null;
+        else {
             CtClass enc = classPool.get(ema.className());
-            return enc.getMethod(ema.methodName(), ema.methodDescriptor());
+            String name = ema.methodName();
+            if (MethodInfo.nameInit.equals(name))
+                return enc.getConstructor(ema.methodDescriptor());
+            else if(MethodInfo.nameClinit.equals(name))
+                return enc.getClassInitializer();
+            else
+                return enc.getMethod(name, ema.methodDescriptor());
         }
-
-        return null;
     }
 
     public CtClass makeNestedClass(String name, boolean isStatic) {
@@ -1195,6 +1214,20 @@ class CtClassType extends CtClass {
         }
 
         return cms;
+    }
+
+    public CtMethod[] getDeclaredMethods(String name) throws NotFoundException {
+        CtMember.Cache memCache = getMembers();
+        CtMember mth = memCache.methodHead();
+        CtMember mthTail = memCache.lastMethod();
+        ArrayList<CtMethod> methods = new ArrayList<CtMethod>();
+        while (mth != mthTail) {
+            mth = mth.next();
+            if (mth.getName().equals(name))
+                methods.add((CtMethod)mth);
+        }
+
+        return methods.toArray(new CtMethod[methods.size()]);
     }
 
     public CtMethod getDeclaredMethod(String name) throws NotFoundException {

@@ -26,10 +26,10 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.security.ProtectionDomain;
 import java.util.Collection;
+
 import javassist.bytecode.ClassFile;
 import javassist.bytecode.Descriptor;
 import javassist.bytecode.Opcode;
-import javassist.bytecode.SignatureAttribute;
 import javassist.expr.ExprEditor;
 
 /* Note:
@@ -69,18 +69,18 @@ public abstract class CtClass {
     /**
      * The version number of this release.
      */
-    public static final String version = "3.18.0-GA";
+    public static final String version = "3.19.0-GA";
 
     /**
      * Prints the version number and the copyright notice.
      *
      * <p>The following command invokes this method:
      *
-     * <ul><pre>java -jar javassist.jar</pre></ul>
+     * <pre>java -jar javassist.jar</pre>
      */
     public static void main(String[] args) {
         System.out.println("Javassist version " + CtClass.version);
-        System.out.println("Copyright (C) 1999-2013 Shigeru Chiba."
+        System.out.println("Copyright (C) 1999-2015 Shigeru Chiba."
                            + " All Rights Reserved.");
     }
 
@@ -415,7 +415,7 @@ public abstract class CtClass {
      *
      * <p>For example,
      *
-     * <pre>class List<T> {
+     * <pre>class List&lt;T&gt; {
      *     T value;
      *     T get() { return value; }
      *     void set(T v) { value = v; }
@@ -762,8 +762,29 @@ public abstract class CtClass {
      * 
      * @return null if this class is not a local class or an anonymous
      * class.
+     * @deprecated The enclosing method might be a constructor.
+     *             Use {@link #getEnclosingBehavior()}.
+     * @see #getEnclosingBehavior()
      */
-    public CtMethod getEnclosingMethod() throws NotFoundException {
+    public final CtMethod getEnclosingMethod() throws NotFoundException {
+        CtBehavior b = getEnclosingBehavior();
+        if (b == null)
+            return null;
+        else if (b instanceof CtMethod)
+            return (CtMethod)b;
+        else
+            throw new NotFoundException(b.getLongName() + " is enclosing " + getName());
+    }
+
+    /**
+     * Returns the immediately enclosing method of this class.
+     * It might be not a method but a constructor.
+     * This method works only with JDK 1.5 or later.
+     *
+     * @return null if this class is not a local class or an anonymous
+     * class.
+     */
+    public CtBehavior getEnclosingBehavior() throws NotFoundException {
         return null;
     }
 
@@ -972,6 +993,20 @@ public abstract class CtClass {
     }
 
     /**
+     * Retrieves methods with the specified name among the methods
+     * declared in the class.  Multiple methods with different parameters
+     * may be returned.
+     *
+     * <p>Note: this method does not search the superclasses.</p>
+     *
+     * @param name      method name.
+     * @since 3.19
+     */
+    public CtMethod[] getDeclaredMethods(String name) throws NotFoundException {
+        throw new NotFoundException(name);
+    }
+
+    /**
      * Retrieves the method with the specified name among the methods
      * declared in the class.  If there are multiple methods with
      * the specified name, then this method returns one of them.
@@ -1060,11 +1095,11 @@ public abstract class CtClass {
      * Any regular Java expression can be used for specifying the initial
      * value.  The followings are examples.
      *
-     * <ul><pre>
+     * <pre>
      * cc.addField(f, "0")               // the initial value is 0.
      * cc.addField(f, "i + 1")           // i + 1.
      * cc.addField(f, "new Point()");    // a Point object.
-     * </pre></ul>
+     * </pre>
      *
      * <p>Here, the type of variable <code>cc</code> is <code>CtClass</code>.
      * The type of <code>f</code> is <code>CtField</code>.
@@ -1094,11 +1129,11 @@ public abstract class CtClass {
      *
      * <p>For example,
      *
-     * <ul><pre>
+     * <pre>
      * CtClass cc = ...;
      * addField(new CtField(CtClass.intType, "i", cc),
      *          CtField.Initializer.constant(1));
-     * </pre></ul>
+     * </pre>
      *
      * <p>This code adds an <code>int</code> field named "i".  The
      * initial value of this field is 1.
@@ -1133,9 +1168,9 @@ public abstract class CtClass {
      * <code>javassist.bytecode</code> package.  For example, the following
      * expression returns all the attributes of a class file.
      *
-     * <ul><pre>
+     * <pre>
      * getClassFile().getAttributes()
-     * </pre></ul>
+     * </pre>
      *
      * @param name              attribute name
      * @see javassist.bytecode.AttributeInfo
@@ -1158,9 +1193,9 @@ public abstract class CtClass {
      * <code>javassist.bytecode</code> package.  For example, the following
      * expression adds an attribute <code>info</code> to a class file.
      *
-     * <ul><pre>
+     * <pre>
      * getClassFile().addAttribute(info)
-     * </pre></ul>
+     * </pre>
      *
      * @param name      attribute name
      * @param data      attribute value

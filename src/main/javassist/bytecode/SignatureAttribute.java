@@ -377,7 +377,7 @@ public class SignatureAttribute extends AttributeInfo {
 
         /**
          * Constructs a <code>TypeParameter</code> representing a type parametre
-         * like <code>&lt;T extends ... &gt;<code>.
+         * like <code>&lt;T extends ... &gt;</code>.
          *
          * @param name      parameter name.
          * @param superClass    an upper bound class-type (or null).
@@ -394,7 +394,7 @@ public class SignatureAttribute extends AttributeInfo {
 
         /**
          * Constructs a <code>TypeParameter</code> representing a type parameter
-         * like <code>&lt;T&gt;<code>.
+         * like <code>&lt;T&gt;</code>.
          *
          * @param name          parameter name.
          */
@@ -591,6 +591,13 @@ public class SignatureAttribute extends AttributeInfo {
                 sbuf.append(ts[i]);
             }
         }
+
+        /**
+         * Returns the type name in the JVM internal style.
+         * For example, if the type is a nested class {@code foo.Bar.Baz},
+         * then {@code foo.Bar$Baz} is returned.
+         */
+        public String jvmTypeName() { return toString(); }
     }
 
     /**
@@ -729,6 +736,10 @@ public class SignatureAttribute extends AttributeInfo {
             if (parent != null)
                 sbuf.append(parent.toString()).append('.');
 
+            return toString2(sbuf);
+        }
+
+        private String toString2(StringBuffer sbuf) {
             sbuf.append(name);
             if (arguments != null) {
                 sbuf.append('<');
@@ -744,6 +755,20 @@ public class SignatureAttribute extends AttributeInfo {
             }
 
             return sbuf.toString();
+        }
+
+        /**
+         * Returns the type name in the JVM internal style.
+         * For example, if the type is a nested class {@code foo.Bar.Baz},
+         * then {@code foo.Bar$Baz} is returned.
+         */
+        public String jvmTypeName() {
+            StringBuffer sbuf = new StringBuffer();
+            ClassType parent = getDeclaringClass();
+            if (parent != null)
+                sbuf.append(parent.jvmTypeName()).append('$');
+
+            return toString2(sbuf);
         }
 
         void encode(StringBuffer sb) {

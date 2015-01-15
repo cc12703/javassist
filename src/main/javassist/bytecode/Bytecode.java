@@ -96,17 +96,19 @@ class ByteVector implements Cloneable {
  * <p>A <code>Bytecode</code> object is an unbounded array
  * containing bytecode.  For example,
  *
- * <ul><pre>ConstPool cp = ...;    // constant pool table
+ * <pre>
+ * ConstPool cp = ...;    // constant pool table
  * Bytecode b = new Bytecode(cp, 1, 0);
  * b.addIconst(3);
  * b.addReturn(CtClass.intType);
- * CodeAttribute ca = b.toCodeAttribute();</ul></pre>
+ * CodeAttribute ca = b.toCodeAttribute();</pre>
  *
  * <p>This program produces a Code attribute including a bytecode
  * sequence:
  *
- * <ul><pre>iconst_3
- * ireturn</pre></ul>
+ * <pre>
+ * iconst_3
+ * ireturn</pre>
  *
  * @see ConstPool
  * @see CodeAttribute
@@ -924,11 +926,14 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      * @see Descriptor#ofConstructor(CtClass[])
      */
     public void addInvokespecial(CtClass clazz, String name, String desc) {
-        addInvokespecial(constPool.addClassInfo(clazz), name, desc);
+        boolean isInterface = clazz == null ? false : clazz.isInterface();
+        addInvokespecial(isInterface,
+                         constPool.addClassInfo(clazz), name, desc);
     }
 
     /**
-     * Appends INVOKESPECIAL.
+     * Appends INVOKESPECIAL.  The invoked method must not be a default
+     * method declared in an interface.
      *
      * @param clazz     the fully-qualified class name.
      * @param name      the method name
@@ -938,11 +943,12 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      * @see Descriptor#ofConstructor(CtClass[])
      */
     public void addInvokespecial(String clazz, String name, String desc) {
-        addInvokespecial(constPool.addClassInfo(clazz), name, desc);
+        addInvokespecial(false, constPool.addClassInfo(clazz), name, desc);
     }
 
     /**
-     * Appends INVOKESPECIAL.
+     * Appends INVOKESPECIAL.  The invoked method must not be a default
+     * method declared in an interface.
      *
      * @param clazz     the index of <code>CONSTANT_Class_info</code>
      *                  structure.
@@ -953,8 +959,31 @@ public class Bytecode extends ByteVector implements Cloneable, Opcode {
      * @see Descriptor#ofConstructor(CtClass[])
      */
     public void addInvokespecial(int clazz, String name, String desc) {
+        addInvokespecial(false, clazz, name, desc);
+    }
+
+    /**
+     * Appends INVOKESPECIAL.
+     *
+     * @param isInterface   true if the invoked method is a default method
+     *                      declared in an interface.
+     * @param clazz     the index of <code>CONSTANT_Class_info</code>
+     *                  structure.
+     * @param name      the method name
+     * @param desc      the descriptor of the method signature.
+     *
+     * @see Descriptor#ofMethod(CtClass,CtClass[])
+     * @see Descriptor#ofConstructor(CtClass[])
+     */
+    public void addInvokespecial(boolean isInterface, int clazz, String name, String desc) {
         add(INVOKESPECIAL);
-        addIndex(constPool.addMethodrefInfo(clazz, name, desc));
+        int index;
+        if (isInterface)
+            index = constPool.addInterfaceMethodrefInfo(clazz, name, desc);
+        else
+            index = constPool.addMethodrefInfo(clazz, name, desc);
+
+        addIndex(index);
         growStack(Descriptor.dataSize(desc) - 1);
     }
 
