@@ -212,9 +212,19 @@ public class Descriptor {
             if (j < 0)
                 break;
 
-            int k = desc.indexOf(';', j);
-            if (k < 0)
-                break;
+            char end;
+            int k = desc.indexOf('<', j);
+            if(k < 0) {
+                k = desc.indexOf(';', j);
+                if (k < 0)
+                    break;
+                else {
+                    end = ';';
+                }
+            }
+            else {
+                end = '<';
+            }
 
             i = k + 1;
             String name = desc.substring(j + 1, k);
@@ -223,7 +233,7 @@ public class Descriptor {
                 newdesc.append(desc.substring(head, j));
                 newdesc.append('L');
                 newdesc.append(name2);
-                newdesc.append(';');
+                newdesc.append(end);
                 head = i;
             }
         }
