@@ -222,7 +222,7 @@ Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.</i>]]></bottom>
   </target>
 
   <target name = "sample-test" depends="sample" >
-    <java fork="true" dir="${run.dir}" classname="sample.Test">
+    <java fork="true" dir="${run.dir}" classname="sample.Test1">
       <classpath refid="classpath"/>
     </java>
   </target>

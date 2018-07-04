@@ -24,7 +24,7 @@ public class LoadConstant extends Expr {
 		super(pos, i, declaring, m);
 		opcode = op;
 	}
-	
+
 	
 	public Object getConstantValue() {
 		ConstPool constPool = getConstPool();
@@ -49,8 +49,9 @@ public class LoadConstant extends Expr {
 		
 		return size;
 	}
-	
-	
+
+
+
 	private CtClass getConstantValueType() throws NotFoundException {
 		Object val = getConstantValue();
 		if(val == null)
@@ -69,6 +70,46 @@ public class LoadConstant extends Expr {
 		else
 			return null;
 		
+	}
+
+
+	public String getConstantClassName() {
+		ConstPool constPool = getConstPool();
+		int index = -1;
+		if(opcode == Opcode.LDC)
+			index = iterator.byteAt(currentPos + 1);
+		else if(opcode == Opcode.LDC_W)
+			index = iterator.u16bitAt(currentPos + 1);
+		else
+			return null;
+
+		if(constPool.getTag(index) != ConstPool.CONST_Class)
+			return null;
+
+		return constPool.getClassInfo(index);
+	}
+
+	public void replaceClassName(String val) throws BadBytecode {
+		ConstPool constPool = getConstPool();
+		int poolIndex = constPool.addClassInfo(val);
+
+		if(opcode == Opcode.LDC) {
+            if(poolIndex < 256) {
+                iterator.writeByte(poolIndex, currentPos + 1);
+            }
+            else {
+                iterator.insertGap(1);
+                iterator.writeByte(Opcode.LDC_W, currentPos);
+                iterator.write16bit(poolIndex, currentPos + 1);
+            }
+        }
+		else if(opcode == Opcode.LDC_W)
+			iterator.write16bit(poolIndex, currentPos + 1);
+		else
+			return;
+
+		edited = true;
+
 	}
 
 	@Override
