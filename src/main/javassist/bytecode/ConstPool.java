@@ -236,6 +236,14 @@ public final class ConstPool {
             return Descriptor.toJavaName(getUtf8Info(c.name));
     }
 
+    public void setClassInfo(int index, String name) {
+        ClassInfo c = (ClassInfo)getItem(index);
+        if (c == null)
+            return;
+
+        setUtf8Info(c.name, Descriptor.toJvmName(name));
+    }
+
     /**
      * Reads <code>CONSTANT_Class_info</code> structure
      * at the given index.
@@ -408,6 +416,15 @@ public final class ConstPool {
             return getClassInfo(minfo.classIndex);
     }
 
+
+    public void setMethodrefClassName(int index, String name) {
+        MemberrefInfo minfo = (MemberrefInfo)getItem(index);
+        if (minfo == null)
+            return;
+
+        setClassInfo(minfo.classIndex, name);
+    }
+
     /**
      * Reads the <code>name_and_type_index</code> field of the
      * <code>CONSTANT_Methodref_info</code> structure
@@ -440,6 +457,19 @@ public final class ConstPool {
         }
     }
 
+    public void setMethodrefName(int index, String name) {
+        MemberrefInfo minfo = (MemberrefInfo)getItem(index);
+        if (minfo == null)
+            return;
+
+        NameAndTypeInfo n
+                = (NameAndTypeInfo)getItem(minfo.nameAndTypeIndex);
+        if(n == null)
+            return;
+
+        setUtf8Info(n.memberName, name);
+    }
+
     /**
      * Reads the <code>descriptor_index</code> field of the
      * <code>CONSTANT_NameAndType_info</code> structure
@@ -460,6 +490,19 @@ public final class ConstPool {
             else
                 return getUtf8Info(n.typeDescriptor);
         }
+    }
+
+    public void setMethodrefType(int index, String desc) {
+        MemberrefInfo minfo = (MemberrefInfo)getItem(index);
+        if (minfo == null)
+            return;
+
+        NameAndTypeInfo n
+                = (NameAndTypeInfo)getItem(minfo.nameAndTypeIndex);
+        if(n == null)
+            return;
+
+        setUtf8Info(n.typeDescriptor, desc);
     }
 
     /**
