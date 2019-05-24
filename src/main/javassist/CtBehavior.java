@@ -1195,8 +1195,12 @@ public abstract class CtBehavior extends CtMember {
             if (stack > ca.getMaxStack())
                 ca.setMaxStack(stack);
 
+
             index = iterator.insertAt(index, b.get());
             iterator.insert(b.getExceptionTable(), index);
+
+            ca.computeMaxStack();
+
             methodInfo.rebuildStackMapIf6(cc.getClassPool(), cc.getClassFile2());
             return lineNum;
         }
