@@ -339,6 +339,15 @@ public final class ConstPool {
             return getClassInfo(f.classIndex);
     }
 
+
+    public void setFieldrefClassName(int index, String name) {
+        FieldrefInfo f = (FieldrefInfo)getItem(index);
+        if (f == null)
+            return;
+
+        setClassInfo(f.classIndex, name);
+    }
+
     /**
      * Reads the <code>name_and_type_index</code> field of the
      * <code>CONSTANT_Fieldref_info</code> structure
@@ -370,6 +379,19 @@ public final class ConstPool {
         }
     }
 
+
+    public void setFieldrefName(int index, String name) {
+        FieldrefInfo f = (FieldrefInfo)getItem(index);
+        if (f == null)
+            return;
+
+        NameAndTypeInfo n = (NameAndTypeInfo)getItem(f.nameAndTypeIndex);
+        if (n == null)
+            return;
+
+        setUtf8Info(n.memberName, name);
+    }
+
     /**
      * Reads the <code>descriptor_index</code> field of the
      * <code>CONSTANT_NameAndType_info</code> structure
@@ -390,6 +412,20 @@ public final class ConstPool {
                 return getUtf8Info(n.typeDescriptor);
         }
     }
+
+
+    public void setFieldrefType(int index, String type) {
+        FieldrefInfo f = (FieldrefInfo)getItem(index);
+        if (f == null)
+            return;
+
+        NameAndTypeInfo n = (NameAndTypeInfo)getItem(f.nameAndTypeIndex);
+        if(n == null)
+            return;
+
+        setUtf8Info(n.typeDescriptor, type);
+    }
+
 
     /**
      * Reads the <code>class_index</code> field of the
