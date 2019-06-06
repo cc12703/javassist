@@ -150,6 +150,11 @@ public class MethodCall extends Expr {
             && !where().getDeclaringClass().getName().equals(getClassName());
     }
 
+
+    public boolean isStatic() {
+        return iterator.byteAt(currentPos) == INVOKESTATIC;
+    }
+
     /*
      * Returns the parameter types of the called method.
 
