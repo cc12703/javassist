@@ -501,6 +501,15 @@ public class Descriptor {
         }
     }
 
+    public static String getReturnString(String desc) {
+        int i = desc.indexOf(')');
+        if (i < 0)
+            return null;
+        else
+            return toClassName(desc.substring(i+1));
+        
+    }
+
     /**
      * Returns the number of the prameters included in the given
      * descriptor.
