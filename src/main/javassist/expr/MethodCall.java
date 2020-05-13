@@ -119,6 +119,12 @@ public class MethodCall extends Expr {
         return cp.getUtf8Info(cp.getNameAndTypeName(nt));
     }
 
+    public void setMethodName(String name) {
+        ConstPool cp = getConstPool();
+        int nt = getNameAndType(cp);
+        cp.setNamaAndTypeName(nt, name);
+    }
+
     /**
      * Returns the called method.
      */

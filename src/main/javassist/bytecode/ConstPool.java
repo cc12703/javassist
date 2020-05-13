@@ -276,6 +276,11 @@ public final class ConstPool {
         return ntinfo.memberName;
     }
 
+    public void setNamaAndTypeName(int index, String name) {
+        NameAndTypeInfo ntinfo = (NameAndTypeInfo)getItem(index);
+        setUtf8Info(ntinfo.memberName, name);
+    }
+
     /**
      * Reads the <code>descriptor_index</code> field of the
      * <code>CONSTANT_NameAndType_info</code> structure
