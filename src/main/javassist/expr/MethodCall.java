@@ -99,6 +99,17 @@ public class MethodCall extends Expr {
          return cname;
     }
 
+    public void setClassName(String name) {
+        ConstPool cp = getConstPool();
+        int pos = currentPos;
+        int index = iterator.u16bitAt(pos + 1);
+
+        int ntInfo = cp.getMethodrefNameAndType(index);
+        int cInfo = cp.addClassInfo(name);
+        int nIndex = cp.addMethodrefInfo(cInfo, ntInfo);
+        iterator.write16bit(nIndex, pos + 1);
+    }
+
     /**
      * Returns the name of the called method. 
      */
