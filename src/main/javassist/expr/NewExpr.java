@@ -91,6 +91,20 @@ public class NewExpr extends Expr {
         return newTypeName;
     }
 
+    public void setClassName(String name) {
+        newTypeName = name;
+
+        ConstPool constPool = getConstPool();
+        int cInfo = constPool.addClassInfo(name);
+        iterator.write16bit(cInfo, newPos + 1);
+
+
+        int opIndex = iterator.u16bitAt(currentPos + 1);
+        int opNTInfo = constPool.getMethodrefNameAndType(opIndex);
+        int opRefInfo = constPool.addMethodrefInfo(cInfo, opNTInfo);
+        iterator.write16bit(opRefInfo, currentPos + 1);
+    }
+
     /**
      * Get the signature of the constructor
      *
